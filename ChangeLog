@@ -1,17 +1,22 @@
 2009-02-09  Israel G. Lugo <israel.lugo@lugosys.com>
 
+	* ChangeLog: Fix filenames that erroneously contained a "src/" prefix.
+
+
+2009-02-09  Israel G. Lugo <israel.lugo@lugosys.com>
+
 	* README: New file, for now only lists dependencies.
 
 
 2009-02-09  Israel G. Lugo <israel.lugo@lugosys.com>
 
-	* src/compare.py: Add svn:executable property, forgot in last commit.
+	* compare.py: Add svn:executable property, forgot in last commit.
 
 
 2009-02-09  Israel G. Lugo <israel.lugo@lugosys.com>
 
 	Add simple command-line interface for testing uses.
-	* src/compare.py: Add shebang. Implement command-line interface that
+	* compare.py: Add shebang. Implement command-line interface that
 	reads filename arguments from argv and prints the result to stdout.
 
 
