@@ -1,5 +1,10 @@
 2009-02-09  Israel G. Lugo <israel.lugo@lugosys.com>
 
+	* README: New file, for now only lists dependencies.
+
+
+2009-02-09  Israel G. Lugo <israel.lugo@lugosys.com>
+
 	* src/compare.py: Add svn:executable property, forgot in last commit.
 
 

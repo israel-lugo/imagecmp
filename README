@@ -1,0 +1,18 @@
+Dependencies:
+
+  * Python Imaging Library (PIL)
+
+    http://www.pythonware.com/products/pil/index.htm
+
+    To install this on Gentoo, emerge dev-python/imaging. To install on Debian
+    or Ubuntu, apt-get install python-imaging.
+
+
+  * NumPy module
+
+    http://numeric.scipy.org/
+
+    To install this on Gentoo, emerge dev-python/numpy. To install on Debian or
+    Ubuntu, apt-get install python-numpy.
+
+$Id$
