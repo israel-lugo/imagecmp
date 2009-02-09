@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 
+
+# $Id$
+
+
 import imagearray
 
 def compare_images(filename1, filename2, resolution=(4,4)):

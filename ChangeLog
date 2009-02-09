@@ -1,5 +1,12 @@
 2009-02-09  Israel G. Lugo <israel.lugo@lugosys.com>
 
+	* compare.py, imagearray.py: Add svn:eol-style property to native.
+	Set svn:keywords property to "Author Date Id Revision". Add $Id$
+	comment to the source code.
+
+
+2009-02-09  Israel G. Lugo <israel.lugo@lugosys.com>
+
 	* ChangeLog: Fix filenames that erroneously contained a "src/" prefix.
 
 

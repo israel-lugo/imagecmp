@@ -1,3 +1,6 @@
+
+# $Id$
+
 import Image
 import numpy
 
