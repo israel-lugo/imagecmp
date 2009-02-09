@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import imagearray
 
 def compare_images(filename1, filename2, resolution=(4,4)):
@@ -20,3 +22,20 @@ def compare_images(filename1, filename2, resolution=(4,4)):
     assert 0 <= difference <= 255
 
     return (difference * 100) / 255
+
+
+if __name__ == '__main__':
+    import sys
+
+    resolution = (4, 4)
+
+    if len(sys.argv) < 3:
+        print >>sys.stderr, 'Usage: %s <filename1> <filename2> [<resolution_x> <resolution_y>]' % sys.argv[0]
+        sys.exit(1)
+
+    filename1, filename2 = sys.argv[1:3]
+
+    if len(sys.argv) >= 5:
+        resolution = (int(sys.argv[3]), int(sys.argv[4]))
+
+    print '%f %%' % (100 - compare_images(filename1, filename2, resolution))
