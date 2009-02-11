@@ -1,3 +1,8 @@
+2009-02-11  Israel G. Lugo <israel.lugo@lugosys.com>
+
+	* ChangeLog: Add svn:eol-style property, set to native.
+
+
 2009-02-09  Israel G. Lugo <israel.lugo@lugosys.com>
 
 	* compare.py, imagearray.py: Add svn:eol-style property to native.
