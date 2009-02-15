@@ -1,5 +1,12 @@
 2009-02-15  Israel G. Lugo <israel.lugo@lugosys.com>
 
+	* imagearray.py (array_from_image): Change filename argument to
+	input_file. Document that the function will accept a file object as
+	well as a filename.
+
+
+2009-02-15  Israel G. Lugo <israel.lugo@lugosys.com>
+
 	* imagecmp.py: New module, main program. Does nothing but parse the
 	command-line for now.
 

@@ -5,8 +5,11 @@ import Image
 import numpy
 
 
-def array_from_image(filename, resample_size=None, data_type=numpy.int16):
+def array_from_image(input_file, resample_size=None, data_type=numpy.int16):
     """Return a NumPy array of an image's RGB values.
+
+    input_file may be a string containing the path to the image, or a file
+    object (opened for reading in binary mode).
 
     The image is converted to RGB first if necessary. Then it is converted
     to a flat (unidimensional) array in the form (R1, G1, B1, R2, G2, B2,
@@ -21,7 +24,7 @@ def array_from_image(filename, resample_size=None, data_type=numpy.int16):
     can do math on it without overflowing (e.g. subtracting two arrays).
 
     """
-    im = Image.open(filename, 'r')
+    im = Image.open(input_file, 'r')
 
     # convert the image to RGB (instead of e.g. palette)
     if im.mode != 'RGB':
