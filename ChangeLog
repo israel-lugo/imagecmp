@@ -1,3 +1,8 @@
+2009-02-14  Israel G. Lugo <israel.lugo@lugosys.com>
+
+	* walk.py: New module. Implements our wrapper for os.walk.
+
+
 2009-02-11  Israel G. Lugo <israel.lugo@lugosys.com>
 
 	* ChangeLog: Add svn:eol-style property, set to native.
