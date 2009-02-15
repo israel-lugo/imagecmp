@@ -1,4 +1,10 @@
-2009-02-14  Israel G. Lugo <israel.lugo@lugosys.com>
+2009-02-15  Israel G. Lugo <israel.lugo@lugosys.com>
+
+	* imagecmp.py: New module, main program. Does nothing but parse the
+	command-line for now.
+
+
+2009-02-15  Israel G. Lugo <israel.lugo@lugosys.com>
 
 	* walk.py: New module. Implements our wrapper for os.walk.
 
