@@ -75,8 +75,8 @@ class ImageDescr(object):
 
         im.draft(None, FINGERPRINT_SIZE)
 
-        im = im.resize(FINGERPRINT_SIZE, Image.BICUBIC)
         im = ImageOps.autocontrast(im, 5)
+        im = im.resize(FINGERPRINT_SIZE, Image.NEAREST)
 
         array = np.fromstring(im.tobytes(), np.uint8)
 
