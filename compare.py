@@ -1,45 +1,65 @@
-#!/usr/bin/env python
+
+# ImageCmp - find similar images among many
+# Copyright (C) 2009,2017 Israel G. Lugo
+#
+# This file is part of ImageCmp.
+#
+# ImageCmp is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation, either version 3 of the License, or (at your
+# option) any later version.
+#
+# ImageCmp is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with ImageCmp. If not, see <http://www.gnu.org/licenses/>.
+#
+# For suggestions, feedback or bug reports: israel.lugo@lugosys.com
 
 
-# $Id$
+"""This module implements the ImageCmp public API."""
 
 
-import imagearray
+import multiprocessing
+import operator
 
-def compare_images(filename1, filename2, resolution=(4,4)):
-    """Compare two images and return the difference between them.
+import imagedescr
 
-    The images are compared by quadrants, using the specified resolution.
-    The returned value is the average difference in color values between
-    corresponding quadrants in each image. It is expressed in a percentage
-    over 255 (which is the highest possible difference, e.g. from black to
-    white). A value of 0 means both images are equal (at the given
-    resolution). A value of 100 means both images are completely different
-    (one's black, the other's white).
+
+def create_worker_pool(worker_count=None):
+    """Create a pool of worker processes.
+
+    worker_count is the number of worker processes to create. If
+    worker_count is None, the function will create as many processes as
+    there are CPUs.
 
     """
-    array1 = imagearray.array_from_image(filename1, resolution)
-    array2 = imagearray.array_from_image(filename2, resolution)
-
-    difference = imagearray.mean_distance(array1, array2)
-
-    assert 0 <= difference <= 255
-
-    return (difference * 100) / 255
+    return multiprocessing.Pool(processes=worker_count)
 
 
-if __name__ == '__main__':
-    import sys
+def findsimilar(filenames):
+    pool = create_worker_pool()
 
-    resolution = (4, 4)
+    try:
+        img_descriptors = pool.map(imagedescr.ImageDescr, filenames)
 
-    if len(sys.argv) < 3:
-        print >>sys.stderr, 'Usage: %s <filename1> <filename2> [<resolution_x> <resolution_y>]' % sys.argv[0]
-        sys.exit(1)
+        all_quadrants = pool.map(imagedescr.calc_quadrants, img_descriptors)
 
-    filename1, filename2 = sys.argv[1:3]
+        quads_nw = sorted(all_quadrants, key=operator.attrgetter("nw"))
+        quads_ne = sorted(all_quadrants, key=operator.attrgetter("ne"))
+        quads_sw = sorted(all_quadrants, key=operator.attrgetter("sw"))
+        quads_se = sorted(all_quadrants, key=operator.attrgetter("se"))
 
-    if len(sys.argv) >= 5:
-        resolution = (int(sys.argv[3]), int(sys.argv[4]))
+        # TODO: Finish this. Still WIP.
 
-    print '%f %%' % (100 - compare_images(filename1, filename2, resolution))
+    finally:
+        pool.terminate()
+        pool.join()
+
+    return img_descriptors, quads_nw, quads_ne, quads_sw, quads_se
+
+
+# vim: set expandtab smarttab shiftwidth=4 softtabstop=4 tw=75 :
