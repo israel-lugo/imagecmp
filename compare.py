@@ -62,4 +62,40 @@ def findsimilar(filenames):
     return img_descriptors, quads_nw, quads_ne, quads_sw, quads_se
 
 
+def group_by(seq, tolerance, key=None):
+    """Group the values of a numerical sequence by a certain tolerance.
+
+    The sequence must be sorted. Returns a list of slices from the original
+    sequence, possibly overlapping, where in each slice all the values are
+    within (n - tolerance <= n <= n + tolerance).
+
+    """
+    groups = []
+
+    lo_idx = 0
+    hi_idx = 0
+
+    for i, val in enumerate(seq):
+        group = []
+        if key is not None:
+            val = key(val)
+
+        minval = val - tolerance
+        maxval = val + tolerance
+
+        # skip lower than minval, starting from last low idx
+        # (no use going back before that)
+        while lo_idx < i and seq[lo_idx] < minval:
+            lo_idx += 1
+
+        # find first value higher than maxval, starting from last high idx
+        # (no use checking before that)
+        while hi_idx < len(seq) and seq[hi_idx] <= maxval:
+            hi_idx += 1
+
+        groups.append(seq[lo_idx:hi_idx])
+
+    return groups
+
+
 # vim: set expandtab smarttab shiftwidth=4 softtabstop=4 tw=75 :
