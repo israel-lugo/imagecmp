@@ -62,18 +62,27 @@ def findsimilar(filenames):
     return img_descriptors, quads_nw, quads_ne, quads_sw, quads_se
 
 
-def group_by(seq, tolerance, key=None):
+def group_by(seq, tolerance, unique=True, key=None):
     """Group the values of a numerical sequence by a certain tolerance.
 
     The sequence MUST be sorted. Returns a list of slices from the original
     sequence, possibly overlapping, where in each slice all the values are
-    within (n - tolerance <= n <= n + tolerance).
+    within (n - tolerance <= n <= n + tolerance). The ordering of the list
+    of slices is arbitrary.
+
+    If unique is True, duplicate groups will be discarded.
 
     key, if provided and not None, is a function to be applied to each
     element of the sequence, to obtain a numerical comparison key.
 
     """
-    groups = []
+    # we use a set or list of index pairs, and build the groups in the end
+    if unique:
+        groups = set()
+        add_pair = groups.add
+    else:
+        groups = []
+        add_pair = groups.append
 
     lo_idx = 0
     hi_idx = 0
@@ -96,9 +105,9 @@ def group_by(seq, tolerance, key=None):
         while hi_idx < len(seq) and seq[hi_idx] <= maxval:
             hi_idx += 1
 
-        groups.append(seq[lo_idx:hi_idx])
+        add_pair((lo_idx, hi_idx))
 
-    return groups
+    return [seq[a:b] for a, b in groups]
 
 
 # vim: set expandtab smarttab shiftwidth=4 softtabstop=4 tw=75 :
