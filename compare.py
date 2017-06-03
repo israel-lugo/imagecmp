@@ -25,6 +25,7 @@
 
 import multiprocessing
 import operator
+import itertools
 
 import imagedescr
 
@@ -62,7 +63,36 @@ def findsimilar(filenames):
     return img_descriptors, quads_nw, quads_ne, quads_sw, quads_se
 
 
-def group_by(seq, tolerance, unique=True, key=None):
+def without_subranges(pairs):
+    """Iterator that yields intervals not contained in other intervals.
+
+    Receives an iterable of tuples (a, b), a <= b. These are interpreted as
+    intervals. The returned iterator yields those intervals that are not
+    contained within other intervals in the same iterable.
+
+    WARNING: The current implementation for this function takes O(N**2)
+    time, so it should not be used with very large iterables.
+
+    """
+    mask = itertools.repeat(True)
+
+    # TODO: If we move to require that the input must be sorted, we can
+    # optimize this. No pair may contain a pair with a smaller a... That
+    # means we can skip checking pairs with lower a's.
+
+    for (a, b) in pairs:
+        not_subpairs = (p0 < a or p1 > b or (p0 == a and p1 == b) for p0, p1 in pairs)
+
+        # Use a list here instead of a generator, to avoid chaining an
+        # arbitrarily large number of generators; bools are very small (a
+        # 1M bool list takes ~8MiB in Python 3.4). As a bonus, expanding
+        # our returned iterable will take O(1).
+        mask = [m and ns for m, ns in zip(mask, not_subpairs)]
+
+    return itertools.compress(pairs, mask)
+
+
+def group_by(seq, tolerance, unique=True, greedy=True, key=None):
     """Group the values of a numerical sequence by a certain tolerance.
 
     The sequence MUST be sorted. Returns a list of slices from the original
@@ -70,7 +100,8 @@ def group_by(seq, tolerance, unique=True, key=None):
     within (n - tolerance <= n <= n + tolerance). The ordering of the list
     of slices is arbitrary.
 
-    If unique is True, duplicate groups will be discarded.
+    If unique is True, duplicate groups will be discarded. If greedy is
+    True, subgroups of larger groups will be discarded.
 
     key, if provided and not None, is a function to be applied to each
     element of the sequence, to obtain a numerical comparison key.
@@ -106,6 +137,9 @@ def group_by(seq, tolerance, unique=True, key=None):
             hi_idx += 1
 
         add_pair((lo_idx, hi_idx))
+
+    if greedy:
+        groups = without_subranges(groups)
 
     return [seq[a:b] for a, b in groups]
 
