@@ -65,9 +65,12 @@ def findsimilar(filenames):
 def group_by(seq, tolerance, key=None):
     """Group the values of a numerical sequence by a certain tolerance.
 
-    The sequence must be sorted. Returns a list of slices from the original
+    The sequence MUST be sorted. Returns a list of slices from the original
     sequence, possibly overlapping, where in each slice all the values are
     within (n - tolerance <= n <= n + tolerance).
+
+    key, if provided and not None, is a function to be applied to each
+    element of the sequence, to obtain a numerical comparison key.
 
     """
     groups = []
