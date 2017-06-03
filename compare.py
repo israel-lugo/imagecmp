@@ -64,32 +64,35 @@ def findsimilar(filenames):
 
 
 def without_subranges(pairs):
-    """Iterator that yields intervals not contained in other intervals.
+    """Return a new list without intervals contained in other intervals.
 
     Receives an iterable of tuples (a, b), a <= b. These are interpreted as
-    intervals. The returned iterator yields those intervals that are not
+    intervals. The returned list has only those intervals that are not
     contained within other intervals in the same iterable.
 
-    WARNING: The current implementation for this function takes O(N**2)
-    time, so it should not be used with very large iterables.
+    The current implementation takes between O(N) time (if almost all the
+    intervals are contained within each other) and O(N**2) time (if almost
+    no intervals are contained within each other).
 
     """
-    mask = itertools.repeat(True)
+    # sort such that we're growing on a and decreasing on b:
+    # [(1, 4), (1, 3), (1, 2), (1, 1), (2, 5), (2, 4), (2, 3)]
+    sorted_pairs = sorted(pairs, reverse=True, key=operator.itemgetter(1))
+    sorted_pairs.sort(key=operator.itemgetter(0))
 
-    # TODO: If we move to require that the input must be sorted, we can
-    # optimize this. No pair may contain a pair with a smaller a... That
-    # means we can skip checking pairs with lower a's.
+    # TODO: This is O(N**2) when there are very few intervals contained in
+    # other intervals. Which is probably the real-life case. Try
+    # implementing this doing deletion of unwanted pairs instead of
+    # addition; it will probably be faster for the very-few-subranges case.
 
-    for (a, b) in pairs:
-        not_subpairs = (p0 < a or p1 > b or (p0 == a and p1 == b) for p0, p1 in pairs)
+    # can't iterate over sorted_pairs, we'll be rebuilding it in the loop
+    i = 0
+    while i < len(sorted_pairs):
+        a, b = sorted_pairs[i]
+        sorted_pairs = sorted_pairs[:i+1] + [(p0, p1) for p0, p1 in sorted_pairs[i+1:] if p0 < a or p1 > b]
+        i += 1
 
-        # Use a list here instead of a generator, to avoid chaining an
-        # arbitrarily large number of generators; bools are very small (a
-        # 1M bool list takes ~8MiB in Python 3.4). As a bonus, expanding
-        # our returned iterable will take O(1).
-        mask = [m and ns for m, ns in zip(mask, not_subpairs)]
-
-    return itertools.compress(pairs, mask)
+    return sorted_pairs
 
 
 def group_by(seq, tolerance, unique=True, greedy=True, key=None):
