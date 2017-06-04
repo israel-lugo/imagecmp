@@ -70,26 +70,39 @@ def without_subranges(pairs):
     intervals. The returned list has only those intervals that are not
     contained within other intervals in the same iterable.
 
-    The current implementation takes between O(N) time (if almost all the
-    intervals are contained within each other) and O(N**2) time (if almost
-    no intervals are contained within each other).
-
     """
-    # sort such that we're growing on a and decreasing on b:
+    # Sort such that we're growing on a and decreasing on b:
     # [(1, 4), (1, 3), (1, 2), (1, 1), (2, 5), (2, 4), (2, 3)]
     sorted_pairs = sorted(pairs, reverse=True, key=operator.itemgetter(1))
     sorted_pairs.sort(key=operator.itemgetter(0))
 
-    # TODO: This is O(N**2) when there are very few intervals contained in
-    # other intervals. Which is probably the real-life case. Try
-    # implementing this doing deletion of unwanted pairs instead of
-    # addition; it will probably be faster for the very-few-subranges case.
+    # This gives us a couple of nice invariants:
+    #  - a pair contains all pairs to its right that have an equal or lower
+    #    value of b
+    #  - a pair to the right with a higher value of b must also have a
+    #    higher value of a, which implies a new independent set (possibly
+    #    overlapping the previous one)
+    #
+    # We just need to pick the first pair, and pairs that transition from
+    # low-b to high-b. Those are the supersets.
 
-    # can't iterate over sorted_pairs, we'll be rebuilding it in the loop
+    # Run through sorted_pairs and delete pairs that aren't low-b to high-b
+    # transitions. If there are many subpairs, it will be faster to copy
+    # transitions to a new list. But we're optimizing for few subpairs.
     i = 0
     while i < len(sorted_pairs):
         a, b = sorted_pairs[i]
-        sorted_pairs = sorted_pairs[:i+1] + [(p0, p1) for p0, p1 in sorted_pairs[i+1:] if p0 < a or p1 > b]
+
+        for before_transition in range(i+1, len(sorted_pairs)):
+            if sorted_pairs[before_transition][1] > b:
+                before_transition -= 1
+                break
+
+        # doesn't delete anything if i+1 == before_transition+1, i.e. if
+        # we're the pair before the transition
+        del sorted_pairs[i+1:before_transition+1]
+
+        # move to first non-deleted pair
         i += 1
 
     return sorted_pairs
