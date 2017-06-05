@@ -90,7 +90,7 @@ def without_subranges(pairs):
     # transitions. If there are many subpairs, it will be faster to copy
     # transitions to a new list. But we're optimizing for few subpairs.
     i = 0
-    while i < len(sorted_pairs):
+    while i < len(sorted_pairs)-1:
         a, b = sorted_pairs[i]
 
         for before_transition in range(i+1, len(sorted_pairs)):
