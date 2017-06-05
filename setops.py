@@ -33,6 +33,8 @@ def without_subsets(pairs):
     intervals. The returned list has only those intervals that are not
     contained within other intervals in the same iterable.
 
+    The new list may be in a different order from the input.
+
     """
     # Sort such that we're growing on a and decreasing on b:
     # [(1, 4), (1, 3), (1, 2), (1, 1), (2, 5), (2, 4), (2, 3)]
