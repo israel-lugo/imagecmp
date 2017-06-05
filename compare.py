@@ -131,6 +131,11 @@ def group_by(seq, tolerance, unique=True, greedy=True, key=None):
         groups = []
         add_pair = groups.append
 
+    if key is None:
+        # slower than checking with an if and not using the key, but we
+        # optimize for uses with a key, as that's the case in this program
+        key = lambda x: x
+
     lo_idx = 0
     hi_idx = 0
 
@@ -144,12 +149,12 @@ def group_by(seq, tolerance, unique=True, greedy=True, key=None):
 
         # skip lower than minval, starting from last low idx
         # (no use going back before that)
-        while lo_idx < i and seq[lo_idx] < minval:
+        while lo_idx < i and key(seq[lo_idx]) < minval:
             lo_idx += 1
 
         # find first value higher than maxval, starting from last high idx
         # (no use checking before that)
-        while hi_idx < len(seq) and seq[hi_idx] <= maxval:
+        while hi_idx < len(seq) and key(seq[hi_idx]) <= maxval:
             hi_idx += 1
 
         add_pair((lo_idx, hi_idx))
