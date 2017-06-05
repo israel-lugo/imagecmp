@@ -68,8 +68,6 @@ def findsimilar(filenames, tolerance):
         quads_sw = quads_sw_promise.get()
         quads_se = quads_se_promise.get()
 
-        # TODO: Finish this. Still WIP.
-
     finally:
         pool.terminate()
         pool.join()
