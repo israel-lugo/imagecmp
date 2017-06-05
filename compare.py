@@ -40,8 +40,17 @@ def create_worker_pool(worker_count=None):
     """
     return multiprocessing.Pool(processes=worker_count)
 
+# Getters for an imagedescr.QuadrantAverages quadrant. Used in findsimilar.
+def _get_nw(q): return q.nw
+def _get_ne(q): return q.ne
+def _get_sw(q): return q.sw
+def _get_se(q): return q.se
+# XXX: Defining these trivial functions here is a necessary workaround, as
+# multiprocessing.Pool can't copy operator.attrgetter into the child
+# processes. They can't be local functions, either.
 
-def findsimilar(filenames):
+
+def findsimilar(filenames, tolerance):
     pool = create_worker_pool()
 
     try:
@@ -49,10 +58,15 @@ def findsimilar(filenames):
 
         all_quadrants = pool.map(imagedescr.calc_quadrants, img_descriptors)
 
-        quads_nw = sorted(all_quadrants, key=operator.attrgetter("nw"))
-        quads_ne = sorted(all_quadrants, key=operator.attrgetter("ne"))
-        quads_sw = sorted(all_quadrants, key=operator.attrgetter("sw"))
-        quads_se = sorted(all_quadrants, key=operator.attrgetter("se"))
+        quads_nw_promise = pool.apply_async(group_by, (all_quadrants, tolerance), {'key': _get_nw})
+        quads_ne_promise = pool.apply_async(group_by, (all_quadrants, tolerance), {'key': _get_ne})
+        quads_sw_promise = pool.apply_async(group_by, (all_quadrants, tolerance), {'key': _get_sw})
+        quads_se_promise = pool.apply_async(group_by, (all_quadrants, tolerance), {'key': _get_se})
+
+        quads_nw = quads_nw_promise.get()
+        quads_ne = quads_ne_promise.get()
+        quads_sw = quads_sw_promise.get()
+        quads_se = quads_se_promise.get()
 
         # TODO: Finish this. Still WIP.
 
