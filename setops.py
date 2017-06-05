@@ -26,7 +26,7 @@
 import operator
 
 
-def without_subranges(pairs):
+def without_subsets(pairs):
     """Return a new list without intervals contained in other intervals.
 
     Receives an iterable of tuples (a, b), a <= b. These are interpreted as
@@ -123,7 +123,7 @@ def group_by(seq, tolerance, unique=True, greedy=True, key=None):
         add_pair((lo_idx, hi_idx))
 
     if greedy:
-        groups = without_subranges(groups)
+        groups = without_subsets(groups)
 
     return [seq[a:b] for a, b in groups]
 
