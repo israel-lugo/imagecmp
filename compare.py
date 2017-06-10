@@ -65,6 +65,13 @@ def get_grouped_quadrants(img_descriptors, tolerance, pool):
     """
     all_quadrants = pool.map(imagedescr.calc_quadrants, img_descriptors)
 
+    # XXX: These pool operations imply memory copies. The data is pickled
+    # and sent to the worker processes. The return values will contain
+    # copies of the original objects, which wastes memory. We may want to
+    # add a unification pass to eliminate duplicate objects: iterate the
+    # quadrants, storing each object in a set, and replacing it with the
+    # instance from the set.
+
     quads_nw_promise = pool.apply_async(setops.group_by, (all_quadrants, tolerance), {'key': _get_nw})
     quads_ne_promise = pool.apply_async(setops.group_by, (all_quadrants, tolerance), {'key': _get_ne})
     quads_sw_promise = pool.apply_async(setops.group_by, (all_quadrants, tolerance), {'key': _get_sw})
@@ -78,20 +85,105 @@ def get_grouped_quadrants(img_descriptors, tolerance, pool):
     return quads_nw, quads_ne, quads_sw, quads_se
 
 
+def count_quadrant(image_groups):
+    """Count images similar to each other, within a quadrant.
+
+    Receives a list of QuadrantAverages groups. Returns a dictionary
+    mapping ImageDescr to ImageDescr counts, e.g.:
+
+        groups = [{a, b, c}, {a, d}]
+        count_quadrant(groups)
+            = {a:{b:1, c:1, d:1}, b:{a:1, c:1}, c:{a:1, b:1}, d:{a:1}}
+
+    """
+    image_counts = {}
+    for group in image_groups:
+        for quadavg in group:
+            im = quadavg.imdesc
+            if im not in image_counts:
+                image_counts[im] = {}
+
+            # add the counts from this group to the current image's counts
+            d = image_counts[im]
+            for other_quadavg in group:
+                other_im = other_quadavg.imdesc
+                if other_im != im:
+                    d[other_im] = d.get(other_im, 0) + 1
+
+    return image_counts
+
+
+def get_similar_counts(quadrants, pool):
+    """Count the similar images within each quadrant.
+
+    Receives a multiprocessing.Pool and a list of quadrants. Quadrants are
+    lists of ImageDescr groups. Returns a dictionary mapping images to
+    image counts:
+
+        quads = [[{a, b, c}, {a, d}], [{a, c}, {a, b}], [{a, b}], [{a, b}]]
+        get_similar_counts(quads, pool)
+            = {a:{b:4, c:2, d:1}, b:{a:4, c:1}, c:{a:2, b:1}, d:{a:1}}
+
+    """
+    # get a list of quadrant counts
+    quadrant_counts = pool.map(count_quadrant, quadrants)
+
+    # XXX: Pool operations imply memory copies. The data is pickled
+    # and sent to the worker processes. The return values will contain
+    # copies of the original objects, which wastes memory. We may want to
+    # add a unification pass to eliminate duplicate objects: iterate the
+    # quadrants, storing each object in a set, and replacing it with the
+    # instance from the set.
+
+    # add the quadrant counts together
+    similar_counts = {}
+    for quadrant_count in quadrant_counts:
+        for key_im in quadrant_count:
+            if key_im not in similar_counts:
+                similar_counts[key_im] = {}
+
+            d = similar_counts[key_im]
+            counts = quadrant_count[key_im]
+            for im in counts:
+                d[im] = d.get(im, 0) + counts[im]
+
+    return similar_counts
+
+
+def get_images_by_quadrants(filenames, tolerance, pool):
+    """Open the images and group them by quadrant similarity.
+
+    Receives a list of filenames, a numeric tolerance value between 0 and
+    255, and a multiprocessing.Pool object. Returns a tuple of quadrants
+    (NW, NE, SW, SE). Each quadrant is a list of sets of QuadrantAverages.
+
+    """
+    img_descriptors = pool.map(imagedescr.ImageDescr, filenames)
+
+    nw, ne, sw, se = get_grouped_quadrants(img_descriptors, tolerance, pool)
+
+    return nw, ne, sw, se
+
+
+def get_similar_candidates(filenames, tolerance, pool):
+    nw, ne, sw, se = get_images_by_quadrants(filenames, tolerance, pool)
+
+    similar_counts = get_similar_counts((nw, ne, sw, se), pool)
+
+    return similar_counts
+
 
 def findsimilar(filenames, tolerance):
     pool = create_worker_pool()
 
     try:
-        img_descriptors = pool.map(imagedescr.ImageDescr, filenames)
-
-        nw, ne, sw, se = get_grouped_quadrants(img_descriptors, tolerance, pool)
+        similar_candidates = get_similar_candidates(filenames, tolerance, pool)
 
     finally:
         pool.terminate()
         pool.join()
 
-    return img_descriptors, nw, ne, sw, se
+    return similar_candidates
 
 
 # vim: set expandtab smarttab shiftwidth=4 softtabstop=4 tw=75 :

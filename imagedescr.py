@@ -20,6 +20,14 @@ class ImageDescr(object):
         self.filepath = filepath
         self.fingerprint = self.calc_fingerprint(filepath)
 
+    def __eq__(self, other):
+        """Compare with another ImageDescr."""
+        return self.filepath == other.filepath
+
+    def __hash__(self):
+        """Return a hash of the object contents."""
+        return hash(self.filepath)
+
     @staticmethod
     def calc_fingerprint(filepath):
         """Calculate an image's fingerprint."""
@@ -56,6 +64,18 @@ class QuadrantAverages(object):
         self.ne = ne
         self.sw = sw
         self.se = se
+
+    def __eq__(self, other):
+        """Compare with another QuadrantAverages."""
+        return (self.imdesc == other.imdesc
+                and self.nw == other.nw
+                and self.ne == other.ne
+                and self.sw == other.sw
+                and self.se == other.se)
+
+    def __hash__(self):
+        """Return a hash of the object contents."""
+        return hash((self.imdesc, self.nw, self.ne, self.sw, self.se))
 
 
 def calc_quadrants(imdesc):
