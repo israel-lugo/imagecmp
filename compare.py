@@ -50,29 +50,48 @@ def _get_se(q): return q.se
 # processes. They can't be local functions, either.
 
 
+
+def get_grouped_quadrants(img_descriptors, tolerance, pool):
+    """Calculate quadrants for the images, and group them by similarity.
+
+    Returns four lists of grouped quadrants: (NW, NE, SW, SE). Each grouped
+    quadrant is a (possibly overlapping) list of sets of similar
+    QuadrantAverages within that quadrant: [{a, b, c}, {f, g, c}, ...].
+
+    tolerance should be a numerical value between 0 and 255, specifying the
+    difference in average value for two images to be considered similar.
+    pool should be a multiprocessing.Pool object, for doing the processing.
+
+    """
+    all_quadrants = pool.map(imagedescr.calc_quadrants, img_descriptors)
+
+    quads_nw_promise = pool.apply_async(setops.group_by, (all_quadrants, tolerance), {'key': _get_nw})
+    quads_ne_promise = pool.apply_async(setops.group_by, (all_quadrants, tolerance), {'key': _get_ne})
+    quads_sw_promise = pool.apply_async(setops.group_by, (all_quadrants, tolerance), {'key': _get_sw})
+    quads_se_promise = pool.apply_async(setops.group_by, (all_quadrants, tolerance), {'key': _get_se})
+
+    quads_nw = quads_nw_promise.get()
+    quads_ne = quads_ne_promise.get()
+    quads_sw = quads_sw_promise.get()
+    quads_se = quads_se_promise.get()
+
+    return quads_nw, quads_ne, quads_sw, quads_se
+
+
+
 def findsimilar(filenames, tolerance):
     pool = create_worker_pool()
 
     try:
         img_descriptors = pool.map(imagedescr.ImageDescr, filenames)
 
-        all_quadrants = pool.map(imagedescr.calc_quadrants, img_descriptors)
-
-        quads_nw_promise = pool.apply_async(setops.group_by, (all_quadrants, tolerance), {'key': _get_nw})
-        quads_ne_promise = pool.apply_async(setops.group_by, (all_quadrants, tolerance), {'key': _get_ne})
-        quads_sw_promise = pool.apply_async(setops.group_by, (all_quadrants, tolerance), {'key': _get_sw})
-        quads_se_promise = pool.apply_async(setops.group_by, (all_quadrants, tolerance), {'key': _get_se})
-
-        quads_nw = quads_nw_promise.get()
-        quads_ne = quads_ne_promise.get()
-        quads_sw = quads_sw_promise.get()
-        quads_se = quads_se_promise.get()
+        nw, ne, sw, se = get_grouped_quadrants(img_descriptors, tolerance, pool)
 
     finally:
         pool.terminate()
         pool.join()
 
-    return img_descriptors, quads_nw, quads_ne, quads_sw, quads_se
+    return img_descriptors, nw, ne, sw, se
 
 
 # vim: set expandtab smarttab shiftwidth=4 softtabstop=4 tw=75 :
