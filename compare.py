@@ -30,6 +30,10 @@ import imagedescr
 import setops
 
 
+SIMILAR_QUADS_THRESHOLD = 3
+"""How many quadrants must match for two images to be considered similar."""
+
+
 def create_worker_pool(worker_count=None):
     """Create a pool of worker processes.
 
@@ -170,7 +174,19 @@ def get_similar_candidates(filenames, tolerance, pool):
 
     similar_counts = get_similar_counts((nw, ne, sw, se), pool)
 
-    return similar_counts
+    candidates = set()
+    for im in similar_counts:
+        im_counts = similar_counts[im]
+        similar_to_im = {
+                other_im
+                for other_im in im_counts
+                if im_counts[other_im] >= SIMILAR_QUADS_THRESHOLD
+            }
+        if similar_to_im:
+            similar_to_im.add(im)
+            candidates.add(frozenset(similar_to_im))
+
+    return candidates
 
 
 def findsimilar(filenames, tolerance):
