@@ -12,24 +12,43 @@ FINGERPRINT_SIZE = (16, 16)
 """Size of the fingerprint thumbnail, in pixels."""
 
 class ImageDescr(object):
-    """Image descriptor."""
+    """Image descriptor.
 
-    __slots__ = ('filepath', 'fingerprint')
+    This is a lightweight read-only data container class.
+
+    """
+
+    __slots__ = ('_filepath', '_fingerprint')
 
     def __init__(self, filepath):
-        self.filepath = filepath
-        self.fingerprint = self.calc_fingerprint(filepath)
+        self._filepath = filepath
+        self._fingerprint = self._calc_fingerprint(filepath)
+
+    @property
+    def filepath(self):
+        """Get the image's file path."""
+        return self._filepath
+
+    @property
+    def fingerprint(self):
+        """Get the image's fingerprint."""
+        return self._fingerprint
 
     def __eq__(self, other):
-        """Compare with another ImageDescr."""
-        return self.filepath == other.filepath
+        """Compare with another ImageDescr.
+
+        Two ImageDescr are considered the same iif their filepath is the
+        same.
+
+        """
+        return self._filepath == other._filepath
 
     def __hash__(self):
-        """Return a hash of the object contents."""
-        return hash(self.filepath)
+        """Return hash(self.filepath)."""
+        return hash(self._filepath)
 
     @staticmethod
-    def calc_fingerprint(filepath):
+    def _calc_fingerprint(filepath):
         """Calculate an image's fingerprint."""
 
         im = Image.open(filepath)
@@ -44,6 +63,7 @@ class ImageDescr(object):
         im = im.resize(FINGERPRINT_SIZE, Image.NEAREST)
 
         array = np.fromstring(im.tobytes(), np.uint8)
+        array.setflags(write=False)
 
         im.close()
 
@@ -53,29 +73,45 @@ class ImageDescr(object):
 class QuadrantAverages(object):
     """Quadrant averages for an image.
 
-    This is a lightweight data container class.
+    This is a lightweight read-only data container class.
 
     """
-    __slots__ = ('imdesc', 'nw', 'ne', 'sw', 'se')
+    __slots__ = ('_imdesc', '_nw', '_ne', '_sw', '_se')
 
     def __init__(self, imdesc, nw, ne, sw, se):
-        self.imdesc = imdesc
-        self.nw = nw
-        self.ne = ne
-        self.sw = sw
-        self.se = se
+        self._imdesc = imdesc
+        self._nw = nw
+        self._ne = ne
+        self._sw = sw
+        self._se = se
+
+    @property
+    def imdesc(self): return self._imdesc
+
+    @property
+    def nw(self): return self._nw
+
+    @property
+    def ne(self): return self._ne
+
+    @property
+    def sw(self): return self._sw
+
+    @property
+    def se(self): return self._se
 
     def __eq__(self, other):
         """Compare with another QuadrantAverages."""
-        return (self.imdesc == other.imdesc
-                and self.nw == other.nw
-                and self.ne == other.ne
-                and self.sw == other.sw
-                and self.se == other.se)
+        return (self._imdesc == other._imdesc
+                and self._nw == other._nw
+                and self._ne == other._ne
+                and self._sw == other._sw
+                and self._se == other._se)
 
     def __hash__(self):
-        """Return a hash of the object contents."""
-        return hash((self.imdesc, self.nw, self.ne, self.sw, self.se))
+        """Return hash(self)."""
+        return hash((self._imdesc, self._nw, self._ne, self._sw, self._se))
+
 
 
 def calc_quadrants(imdesc):
