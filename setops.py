@@ -24,9 +24,27 @@
 
 
 import operator
+import itertools
 
 
-def without_subsets(pairs):
+
+def has_supersets(x, seq):
+    """Return True if x has at least one superset in seq."""
+    for i in seq:
+        if x.issubset(i):
+            return True
+
+    return False
+
+
+def without_subsets(seq):
+    """Return a new set without sets contained in other sets."""
+    sorted_by_len = sorted(seq, key=len)
+
+    return {x for i, x in enumerate(sorted_by_len) if not has_supersets(x, itertools.islice(sorted_by_len, i+1, None))}
+
+
+def without_pair_subsets(pairs):
     """Return a new list without intervals contained in other intervals.
 
     Receives an iterable of tuples (a, b), a <= b. These are interpreted as
@@ -128,7 +146,7 @@ def group_by(seq, tolerance, unique=True, greedy=True, no_singles=False, key=Non
             add_pair((lo_idx, hi_idx))
 
     if greedy:
-        groups = without_subsets(groups)
+        groups = without_pair_subsets(groups)
 
     return [seq[a:b] for a, b in groups]
 
