@@ -25,6 +25,8 @@
 
 import multiprocessing
 import itertools
+import functools
+import operator
 
 import imagedescr
 import setops
@@ -44,18 +46,24 @@ def create_worker_pool(worker_count=None):
     """
     return multiprocessing.Pool(processes=worker_count)
 
-# Getters for an imagedescr.QuadrantAverages quadrant. Used in findsimilar.
-def _get_nw(q): return q.nw
-def _get_ne(q): return q.ne
-def _get_sw(q): return q.sw
-def _get_se(q): return q.se
-# XXX: Defining these trivial functions here is a necessary workaround, as
-# multiprocessing.Pool can't copy operator.attrgetter into the child
-# processes. They can't be local functions, either.
+
+def group_quadrant_n(args):
+    """Group slice n of image quadrants.
+
+    Receives a tuple (all_image_quads, tolerance, n) and returns the result
+    of running setops.group_by on all_image_quads, with the specified
+    tolerance, using a key that gets the n-th quadrant of each image.
+
+    Useful for multiprocessing.Pool.map, as that function can only map
+    picklable or global functions.
+
+    """
+    all_image_quads, tolerance, n = args
+
+    return setops.group_by(all_image_quads, tolerance, key=lambda q: q.quadrants[n])
 
 
-
-def get_grouped_quadrants(img_descriptors, tolerance, pool):
+def get_grouped_quadrants(img_descriptors, tolerance, nquads_x, nquads_y, pool):
     """Calculate quadrants for the images, and group them by similarity.
 
     Returns four lists of grouped quadrants: (NW, NE, SW, SE). Each grouped
@@ -67,7 +75,13 @@ def get_grouped_quadrants(img_descriptors, tolerance, pool):
     pool should be a multiprocessing.Pool object, for doing the processing.
 
     """
-    all_quadrants = pool.map(imagedescr.calc_quadrants, img_descriptors)
+    # specific calc_quadrants for our nquads_x and nquads_y; needs Python
+    # >= 2.7, since in earlier versions partial functions weren't picklable
+    # (and pool.map needs a global or picklable function)
+    calc_quadrants_xy = functools.partial(imagedescr.calc_quadrants,
+                                          n_x=nquads_x, n_y=nquads_y)
+
+    all_image_quads = pool.map(calc_quadrants_xy, img_descriptors)
 
     # XXX: These pool operations imply memory copies. The data is pickled
     # and sent to the worker processes. The return values will contain
@@ -76,17 +90,10 @@ def get_grouped_quadrants(img_descriptors, tolerance, pool):
     # quadrants, storing each object in a set, and replacing it with the
     # instance from the set.
 
-    quads_nw_promise = pool.apply_async(setops.group_by, (all_quadrants, tolerance), {'key': _get_nw})
-    quads_ne_promise = pool.apply_async(setops.group_by, (all_quadrants, tolerance), {'key': _get_ne})
-    quads_sw_promise = pool.apply_async(setops.group_by, (all_quadrants, tolerance), {'key': _get_sw})
-    quads_se_promise = pool.apply_async(setops.group_by, (all_quadrants, tolerance), {'key': _get_se})
+    quads_per_image = nquads_x * nquads_y
+    grouped_quads = pool.map(group_quadrant_n, [(all_image_quads, tolerance, i) for i in range(quads_per_image)])
 
-    quads_nw = quads_nw_promise.get()
-    quads_ne = quads_ne_promise.get()
-    quads_sw = quads_sw_promise.get()
-    quads_se = quads_se_promise.get()
-
-    return quads_nw, quads_ne, quads_sw, quads_se
+    return grouped_quads
 
 
 def count_quadrant(image_groups):
@@ -164,12 +171,22 @@ def get_images_by_quadrants(filenames, tolerance, pool):
     """
     img_descriptors = pool.map(imagedescr.ImageDescr, filenames)
 
-    nw, ne, sw, se = get_grouped_quadrants(img_descriptors, tolerance, pool)
+    nw, ne, sw, se = get_grouped_quadrants(img_descriptors, tolerance, 2, 2, pool)
 
     return nw, ne, sw, se
 
 
 def get_similar_candidates(filenames, tolerance, pool):
+
+    # TODO: Change this to receive img_descriptors, and an amount of
+    # quadrants to subdivide each image. We can then be called iteratively
+    # by someone else: first with 2x2 quadrants on the entire image list;
+    # then with 4x4 within each candidate group, and so on. 
+    #
+    # We'll probably just call get_grouped_quadrants directly here, with
+    # (nquads_x, nquads_y). get_images_by_quadrants gets converted into a
+    # mere get_images, that returns the ImageDescr list, and is called by
+    # whomever calls us (to provide us the first imdesc list, with 2x2).
     nw, ne, sw, se = get_images_by_quadrants(filenames, tolerance, pool)
 
     similar_counts = get_similar_counts((nw, ne, sw, se), pool)

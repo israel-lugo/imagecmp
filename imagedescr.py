@@ -76,78 +76,64 @@ class QuadrantAverages(object):
     This is a lightweight read-only data container class.
 
     """
-    __slots__ = ('_imdesc', '_nw', '_ne', '_sw', '_se')
+    __slots__ = ('_imdesc', '_quadrants')
 
-    def __init__(self, imdesc, nw, ne, sw, se):
+    def __init__(self, imdesc, quadrants):
         self._imdesc = imdesc
-        self._nw = nw
-        self._ne = ne
-        self._sw = sw
-        self._se = se
+        self._quadrants = quadrants
 
     @property
     def imdesc(self): return self._imdesc
 
     @property
-    def nw(self): return self._nw
-
-    @property
-    def ne(self): return self._ne
-
-    @property
-    def sw(self): return self._sw
-
-    @property
-    def se(self): return self._se
+    def quadrants(self): return self._quadrants
 
     def __eq__(self, other):
         """Compare with another QuadrantAverages."""
         return (self._imdesc == other._imdesc
-                and self._nw == other._nw
-                and self._ne == other._ne
-                and self._sw == other._sw
-                and self._se == other._se)
+                and self._quadrants == self._quadrants)
 
     def __hash__(self):
         """Return hash(self)."""
-        return hash((self._imdesc, self._nw, self._ne, self._sw, self._se))
+        return hash((self._imdesc, self._quadrants))
 
 
+def calc_quadrants(imdesc, n_x, n_y):
+    """Calculate quadrant averages, for an arbitrary number of quadrants.
 
-def calc_quadrants(imdesc):
-    """Calculate quadrant averages.
+    Receives the ImageDescr, the number of quadrants along the x axis, and
+    the number of quadrants along the y axis. Reshapes the image's
+    fingerprint into a thumbnail of the image, and divides it into
+    quadrants as specified.
+    
+    Returns a QuadrantAverages object.
 
-    Reshapes the fingerprint back into the original shape of the image,
-    and divides it into quadrants. Calculates the average value of each
-    quadrant, and returns them as a tuple, left-right, top-down:
-    (nw_avg, ne_avg, se_avg, sw_avg).
+    The number of quadrants must be an even divisor of the ImageDescr's
+    fingerprint size along its respective axis.
 
     """
     x = FINGERPRINT_SIZE[0]
     pixel_cols = FINGERPRINT_SIZE[1]
 
-    # each pixel in a line is actually 3 values: (R, G, B)
     y = pixel_cols*3
 
     assert imdesc.fingerprint.size == x * y
 
+    quad_x, rem_x = divmod(x, n_x)
+    quad_y, rem_y = divmod(y, n_y)
+
+    if (rem_x != 0):
+        raise ValueError("thumbnail x (%d) does not evenly divide by n_x (%d)"
+                         % (x, n_x))
+    if (rem_y != 0):
+        raise ValueError("thumbnail y (%d) does not evenly divide by n_y (%d)"
+                         % (y, n_y))
+
     # reshape into a 2D rectangle of pixel values
     rect = imdesc.fingerprint.reshape(x, y)
 
-    assert x % 2 == 0 and y % 2 == 0
-    half_x = x/2
-    half_y = y/2
+    quadrants = tuple(rect[i:i+quad_x, j:j+quad_y].mean()
+                        for i in range(0, x, quad_x)
+                        for j in range(0, y, quad_y))
 
-    north_west = rect[0:half_x, 0:half_y]
-    north_east = rect[0:half_x, half_y:y]
-    south_west = rect[half_x:x, 0:half_y]
-    south_east = rect[half_x:x, half_y:y]
-
-    nw_avg = north_west.mean()
-    ne_avg = north_east.mean()
-    sw_avg = south_west.mean()
-    se_avg = south_east.mean()
-
-    return QuadrantAverages(imdesc, nw_avg, ne_avg, sw_avg, se_avg)
-
-
+    return QuadrantAverages(imdesc, quadrants)
