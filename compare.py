@@ -66,13 +66,16 @@ def group_quadrant_n(args):
 def get_grouped_quadrants(img_descriptors, tolerance, nquads_x, nquads_y, pool):
     """Calculate quadrants for the images, and group them by similarity.
 
-    Returns four lists of grouped quadrants: (NW, NE, SW, SE). Each grouped
-    quadrant is a (possibly overlapping) list of sets of similar
-    QuadrantAverages within that quadrant: [{a, b, c}, {f, g, c}, ...].
+    Receives a list of ImageDescr, a tolerance value between 0 and 255, the
+    number of subdivisions along the x axis, the number of subdivisions
+    along the y axis, and a multiprocessing.Pool object to parallelize the
+    work. The tolerance value specifies the difference in average value for
+    two quadrants to be considered similar.
 
-    tolerance should be a numerical value between 0 and 255, specifying the
-    difference in average value for two images to be considered similar.
-    pool should be a multiprocessing.Pool object, for doing the processing.
+    Returns a list of grouped quadrants, of length nquads_x * nquads_y.
+    Each grouped quadrant is a (possibly overlapping) list of sets of
+    similar QuadrantAverages within that quadrant:
+        [{a, b, c}, {f, g, c}, ...]
 
     """
     # specific calc_quadrants for our nquads_x and nquads_y; needs Python
