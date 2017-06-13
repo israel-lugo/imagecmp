@@ -216,6 +216,9 @@ def refine_candidates(candidates, tolerance, nquads_x, nquads_y, pool):
 
 
 def findsimilar(filenames, tolerance):
+    # FIXME: This doesn't behave in a reproducible manner, at least in
+    # Python 3.4. Results vary. Seems to be consistent in Python 2.7.
+
     pool = create_worker_pool()
 
     try:
