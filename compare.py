@@ -1,3 +1,4 @@
+#! /usr/bin/env python
 
 # ImageCmp - find similar images among many
 # Copyright (C) 2009,2017 Israel G. Lugo
@@ -229,6 +230,25 @@ def findsimilar(filenames, tolerance):
         pool.join()
 
     return similar_candidates
+
+
+if __name__ == '__main__':
+    # debug/testing
+    import sys
+    import time
+
+    filenames = sys.argv[1:]
+
+    t0 = time.time()
+    similar = findsimilar(filenames, 20)
+    t1 = time.time()
+
+    for g in similar:
+        for i in g:
+            print(i, i.filepath)
+        print("-------------")
+
+    print("%d file(s) compared in %.6f seconds" % (len(filenames), t1-t0))
 
 
 # vim: set expandtab smarttab shiftwidth=4 softtabstop=4 tw=75 :
