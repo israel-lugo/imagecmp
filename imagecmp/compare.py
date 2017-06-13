@@ -212,7 +212,7 @@ def refine_candidates(candidates, tolerance, nquads_x, nquads_y, pool):
     for candidate_group in candidates:
         refined_candidates.update(get_similar_candidates(candidate_group, tolerance, nquads_x, nquads_y, pool))
 
-    return refined_candidates
+    return setops.without_subsets(refined_candidates)
 
 
 def findsimilar(filenames, tolerance):
