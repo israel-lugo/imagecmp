@@ -29,8 +29,8 @@ import itertools
 import functools
 import operator
 
-import imagedescr
-import setops
+from imagecmp import imagedescr
+from imagecmp import setops
 
 
 SIMILAR_QUADS_RATIO = 0.6
