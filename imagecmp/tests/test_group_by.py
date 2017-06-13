@@ -40,6 +40,7 @@ group_by_numeric_data = [
     (list(range(10)), 6),
     (list(range(100)), 10),
     (list(range(-100,100,2)), 3),
+    (list(range(100,-100,-2)), 3),  # test unsorted
 ]
 
 

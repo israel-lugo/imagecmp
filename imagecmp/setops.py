@@ -94,10 +94,10 @@ def without_pair_subsets(pairs):
 def group_by(seq, tolerance, unique=True, greedy=True, no_singles=False, key=None):
     """Group the values of a numerical sequence by a certain tolerance.
 
-    The sequence MUST be sorted. Returns a list of slices from the original
-    sequence, possibly overlapping, where in each slice all the values are
-    within (n - tolerance <= n <= n + tolerance). The ordering of the list
-    of slices is arbitrary.
+    Returns a list of slices from the original sequence, possibly
+    overlapping, where in each slice all the values are within (n -
+    tolerance <= n <= n + tolerance). The ordering of the list of slices is
+    arbitrary.
 
     If unique is True, duplicate groups will be discarded. If greedy is
     True, subgroups of larger groups will be discarded. If no_singles is
@@ -123,7 +123,9 @@ def group_by(seq, tolerance, unique=True, greedy=True, no_singles=False, key=Non
     lo_idx = 0
     hi_idx = 0
 
-    for i, val in enumerate(seq):
+    sorted_seq = sorted(seq, key=key)
+
+    for i, val in enumerate(sorted_seq):
         group = []
         if key is not None:
             val = key(val)
@@ -133,12 +135,12 @@ def group_by(seq, tolerance, unique=True, greedy=True, no_singles=False, key=Non
 
         # skip lower than minval, starting from last low idx
         # (no use going back before that)
-        while lo_idx < i and key(seq[lo_idx]) < minval:
+        while lo_idx < i and key(sorted_seq[lo_idx]) < minval:
             lo_idx += 1
 
         # find first value higher than maxval, starting from last high idx
         # (no use checking before that)
-        while hi_idx < len(seq) and key(seq[hi_idx]) <= maxval:
+        while hi_idx < len(sorted_seq) and key(sorted_seq[hi_idx]) <= maxval:
             hi_idx += 1
 
         # discard unitary pairs if requested (note hi_idx is not inclusive)
@@ -148,7 +150,7 @@ def group_by(seq, tolerance, unique=True, greedy=True, no_singles=False, key=Non
     if greedy:
         groups = without_pair_subsets(groups)
 
-    return [seq[a:b] for a, b in groups]
+    return [sorted_seq[a:b] for a, b in groups]
 
 
 
