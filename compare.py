@@ -32,8 +32,8 @@ import imagedescr
 import setops
 
 
-SIMILAR_QUADS_THRESHOLD = 3
-"""How many quadrants must match for two images to be considered similar."""
+SIMILAR_QUADS_RATIO = 0.6
+"""Ratio of quadrants that must match for two images to be similar."""
 
 
 def create_worker_pool(worker_count=None):
@@ -164,35 +164,22 @@ def get_similar_counts(quadrants, pool):
     return similar_counts
 
 
-def get_images_by_quadrants(filenames, tolerance, pool):
-    """Open the images and group them by quadrant similarity.
+def get_similar_candidates(img_descriptors, tolerance, nquads_x, nquads_y, pool):
+    """Get similar candidates within a group of images.
 
-    Receives a list of filenames, a numeric tolerance value between 0 and
-    255, and a multiprocessing.Pool object. Returns a tuple of quadrants
-    (NW, NE, SW, SE). Each quadrant is a list of sets of QuadrantAverages.
+    Receives an iterable of ImageDescr, a tolerance value within 0 and
+    255, the number of subdivisions along the x axis, the number of
+    subdivisions along the y axis, and a multiprocessing.Pool object to
+    parallelize the work.
+
+    Returns a set of candidate similar ImageDescr.
 
     """
-    img_descriptors = pool.map(imagedescr.ImageDescr, filenames)
+    quadrants = get_grouped_quadrants(img_descriptors, tolerance, nquads_x, nquads_y, pool)
 
-    nw, ne, sw, se = get_grouped_quadrants(img_descriptors, tolerance, 2, 2, pool)
+    similar_counts = get_similar_counts(quadrants, pool)
 
-    return nw, ne, sw, se
-
-
-def get_similar_candidates(filenames, tolerance, pool):
-
-    # TODO: Change this to receive img_descriptors, and an amount of
-    # quadrants to subdivide each image. We can then be called iteratively
-    # by someone else: first with 2x2 quadrants on the entire image list;
-    # then with 4x4 within each candidate group, and so on. 
-    #
-    # We'll probably just call get_grouped_quadrants directly here, with
-    # (nquads_x, nquads_y). get_images_by_quadrants gets converted into a
-    # mere get_images, that returns the ImageDescr list, and is called by
-    # whomever calls us (to provide us the first imdesc list, with 2x2).
-    nw, ne, sw, se = get_images_by_quadrants(filenames, tolerance, pool)
-
-    similar_counts = get_similar_counts((nw, ne, sw, se), pool)
+    min_similar_quads = int(nquads_x * nquads_y * SIMILAR_QUADS_RATIO)
 
     candidates = set()
     for im in similar_counts:
@@ -200,7 +187,7 @@ def get_similar_candidates(filenames, tolerance, pool):
         similar_to_im = {
                 other_im
                 for other_im in im_counts
-                if im_counts[other_im] >= SIMILAR_QUADS_THRESHOLD
+                if im_counts[other_im] >= min_similar_quads
             }
         if similar_to_im:
             similar_to_im.add(im)
@@ -209,11 +196,33 @@ def get_similar_candidates(filenames, tolerance, pool):
     return candidates
 
 
+def refine_candidates(candidates, tolerance, nquads_x, nquads_y, pool):
+    """Refine candidate groups.
+
+    Receives an iterable of candidate sets (groups). For each candidate
+    set, the images are divided into the specified number of quadrants
+    vertically and horizontally, and compared by the specified tolerance.
+
+    Returns a refined set of candidate groups, in the form of frozensets.
+
+    """
+    refined_candidates = set()
+
+    for candidate_group in candidates:
+        refined_candidates.update(get_similar_candidates(candidate_group, tolerance, nquads_x, nquads_y, pool))
+
+    return refined_candidates
+
+
 def findsimilar(filenames, tolerance):
     pool = create_worker_pool()
 
     try:
-        similar_candidates = get_similar_candidates(filenames, tolerance, pool)
+        similar_candidates = refine_candidates([pool.map(imagedescr.ImageDescr, filenames)], tolerance, 4, 4, pool)
+
+        #similar_candidates = refine_candidates(similar_candidates, tolerance, 8, 8, pool)
+
+        similar_candidates = refine_candidates(similar_candidates, tolerance, 16, 16, pool)
 
     finally:
         pool.terminate()
