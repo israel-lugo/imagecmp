@@ -1,0 +1,8 @@
+include *.txt
+include *.rst
+include *.md
+include test.sh
+recursive-include docs *
+recursive-include imagecmp/tests *
+recursive-exclude imagecmp/tests *.pyc
+recursive-exclude imagecmp/tests *.pyo
