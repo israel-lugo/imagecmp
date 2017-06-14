@@ -69,3 +69,23 @@ def test_group_by_lossless(seq, tolerance):
     for i in seq:
         assert i in joined
 
+
+def test_group_by_lossless():
+    """group_by(seq, t, key) = e"""
+    class A(object):
+        def __init__(self, x):
+            self.x = x
+
+    seq = [A(i) for i in range(10)]
+    expected = [seq[0:7], seq[1:8], seq[2:9], seq[3:10]]
+
+    groups = setops.group_by(seq, 3, key=lambda a: a.x)
+
+    # sort the received groups by their first element
+    groups.sort(key=lambda i: i[0].x)
+
+    # make sure that every element in every group is the same as the
+    # corresponding element in the expected group
+    for group, expected_group in zip(groups, expected):
+        for i, a in enumerate(group):
+            assert a is expected_group[i]
