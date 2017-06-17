@@ -49,7 +49,7 @@ def create_worker_pool(worker_count=None):
 
 
 def group_quadrant_n(args):
-    """Group slice n of image quadrants.
+    """Group n-th image quadrant.
 
     Receives a tuple (all_image_quads, tolerance, n) and returns the result
     of running setops.group_by on all_image_quads, with the specified
