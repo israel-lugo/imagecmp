@@ -70,6 +70,31 @@ def test_group_by_lossless(seq, tolerance):
         assert i in joined
 
 
+def test_group_by_unique():
+    """Make sure group_by removes duplicate groups."""
+    seq = [0, 1, 50, 51, 99, 100]
+
+    groups = setops.group_by(seq, 10)
+
+    assert len(groups) > 0
+
+    while groups:
+        group = groups.pop()
+        assert group not in groups
+
+
+def test_group_by_greedy():
+    """Make sure group_by aggregates subgroups."""
+    seq = list(range(7))
+
+    groups = setops.group_by(seq, 2)
+
+    # without being greedy, this would be [[0, 1, 2], [0, 1, 2, 3], [0, 1,
+    # 2, 3, 4], [1, 2, 3, 4, 5], [2, 3, 4, 5, 6], [3, 4, 5, 6], [4, 5, 6]]
+    #
+    assert sorted(groups) == [[0, 1, 2, 3, 4], [1, 2, 3, 4, 5], [2, 3, 4, 5, 6]]
+
+
 def test_group_by_key():
     """group_by(seq, t, key) = e"""
     class A(object):
