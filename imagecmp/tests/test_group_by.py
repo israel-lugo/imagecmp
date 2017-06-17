@@ -70,7 +70,7 @@ def test_group_by_lossless(seq, tolerance):
         assert i in joined
 
 
-def test_group_by_lossless():
+def test_group_by_key():
     """group_by(seq, t, key) = e"""
     class A(object):
         def __init__(self, x):
