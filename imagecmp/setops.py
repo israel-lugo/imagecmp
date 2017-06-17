@@ -91,7 +91,7 @@ def without_pair_subsets(pairs):
     return sorted_pairs
 
 
-def group_by(seq, tolerance, unique=True, greedy=True, no_singles=False, key=None):
+def group_by(seq, tolerance, no_singles=False, key=None):
     """Group the values of a numerical sequence by a certain tolerance.
 
     Returns a list of slices from the original sequence, possibly
@@ -99,21 +99,14 @@ def group_by(seq, tolerance, unique=True, greedy=True, no_singles=False, key=Non
     tolerance <= n <= n + tolerance). The ordering of the list of slices is
     arbitrary.
 
-    If unique is True, duplicate groups will be discarded. If greedy is
-    True, subgroups of larger groups will be discarded. If no_singles is
-    True, groups with a single item will be discarded.
+    If no_singles is True, groups with a single item will be discarded.
 
     key, if provided and not None, is a function to be applied to each
     element of the sequence, to obtain a numerical comparison key.
 
     """
-    # we use a set or list of index pairs, and build the groups in the end
-    if unique:
-        groups = set()
-        add_pair = groups.add
-    else:
-        groups = []
-        add_pair = groups.append
+    # we use a list of index pairs, and build the groups in the end
+    groups = []
 
     if key is None:
         # slower than checking with an if and not using the key, but we
@@ -145,10 +138,9 @@ def group_by(seq, tolerance, unique=True, greedy=True, no_singles=False, key=Non
 
         # discard unitary pairs if requested (note hi_idx is not inclusive)
         if hi_idx > lo_idx+1 or not no_singles:
-            add_pair((lo_idx, hi_idx))
+            groups.append((lo_idx, hi_idx))
 
-    if greedy:
-        groups = without_pair_subsets(groups)
+    groups = without_pair_subsets(groups)
 
     return [sorted_seq[a:b] for a, b in groups]
 
