@@ -48,22 +48,6 @@ def create_worker_pool(worker_count=None):
     return multiprocessing.Pool(processes=worker_count)
 
 
-def group_quadrant_n(args):
-    """Group n-th image quadrant.
-
-    Receives a tuple (all_image_quads, tolerance, n) and returns the result
-    of running setops.group_by on all_image_quads, with the specified
-    tolerance, using a key that gets the n-th quadrant of each image.
-
-    Useful for multiprocessing.Pool.map, as that function can only map
-    picklable or global functions.
-
-    """
-    all_image_quads, tolerance, n = args
-
-    return setops.group_by(all_image_quads, tolerance, key=lambda q: q.quadrants[n])
-
-
 def get_grouped_quadrants(img_descriptors, tolerance, nquads_x, nquads_y, pool):
     """Calculate quadrants for the images, and group them by similarity.
 
@@ -95,7 +79,10 @@ def get_grouped_quadrants(img_descriptors, tolerance, nquads_x, nquads_y, pool):
     # instance from the set.
 
     quads_per_image = nquads_x * nquads_y
-    grouped_quads = pool.map(group_quadrant_n, [(all_image_quads, tolerance, i) for i in range(quads_per_image)])
+    grouped_quads = [
+            setops.group_by(all_image_quads, tolerance, key=lambda q: q.quadrants[n])
+            for n in range(quads_per_image)
+    ]
 
     return grouped_quads
 
